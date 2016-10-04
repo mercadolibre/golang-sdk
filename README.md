@@ -1,6 +1,6 @@
 # MercadoLibre's Golang SDK
 
-This is the official GO SDK for MercadoLibre's Platform.
+This is the official Golang SDK for MercadoLibre's Platform.
 
 ## How do I install it?
 
