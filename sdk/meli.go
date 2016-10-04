@@ -17,7 +17,7 @@ limitations under the License.
 **
 
 This package allows you to interact with the Mercadolibre open platform API.
-The are two main structures:
+There are two main structures:
 1) Client
 2) Authorization
 
@@ -63,6 +63,7 @@ const (
 
     AUTHORIZATION_CODE = "authorization_code"
     API_URL = "https://api.mercadolibre.com"
+    REFRESH_TOKEN = "refresh_token"
 )
 
 var publicClient = &Client{apiUrl:API_URL, auth:ANONYMOUS, httpClient:MeliHttpClient{}, tokenRefresher:MeliTokenRefresher{}}
@@ -71,12 +72,12 @@ var clientByUserMutex sync.Mutex
 var ANONYMOUS = Authorization{}
 var authMutex = &sync.Mutex{}
 
-var dbg bool
+var debugEnable bool
 
 func init() {
     log.SetFlags(log.LstdFlags | log.Lshortfile)
     clientByUser = make(map[string] *Client)
-    dbg = false  //Set this true if you want to see debug messages
+    debugEnable = false  //Set this true if you want to see debug messages
 }
 
 /*
@@ -163,12 +164,12 @@ func MeliClient(config MeliConfig) (*Client, error) {
             tokenRefresher: config.TokenRefresher,
         }
 
-        if dbg {log.Printf("Building a client: %p for clientid:%d code:%s\n", client, config.ClientId, config.UserCode)}
+        if debugEnable {log.Printf("Building a client: %p for clientid:%d code:%s\n", client, config.ClientId, config.UserCode)}
 
         auth, err := client.authorize()
 
         if err != nil {
-            log.Printf("error: %s", err.Error())
+            if debugEnable {log.Printf("error: %s", err.Error())}
             return nil, err
         }
 
@@ -195,13 +196,13 @@ func httpErrorHandler(client *Client, resource string, httpMethod Callback) (*ht
     var err error
 
     if apiUrl, err = getAuthorizedURL(client, resource); err != nil {
-        if dbg { log.Printf("Error %s", err) }
+        if debugEnable {log.Printf("Error %s", err)}
         return nil, err
     }
 
     var resp *http.Response
     if resp, err = httpMethod.Call(apiUrl.string()); err != nil {
-        log.Printf("Error while calling url: %s \n Error: %s", apiUrl.string(), err)
+        if debugEnable {log.Printf("Error while calling url: %s \n Error: %s", apiUrl.string(), err)}
         return nil, err
     }
 
@@ -269,7 +270,7 @@ func (client *Client) authorize() (*Authorization, error) {
     var resp *http.Response
     var err error
     if resp, err = client.httpClient.Post(authURL.string(), "application/json", *(new(io.Reader))); err != nil {
-        log.Printf("Error when posting: %s", err)
+        if debugEnable {log.Printf("Error when posting: %s", err)}
         return nil, err
     }
 
@@ -282,7 +283,7 @@ func (client *Client) authorize() (*Authorization, error) {
 
     authorization := new(Authorization)
     if err := json.Unmarshal(body, authorization); err != nil {
-        log.Printf("Error while receiving the authorization %s %s", err.Error(), body)
+        if debugEnable {log.Printf("Error while receiving the authorization %s %s", err.Error(), body)}
         return nil, err
     }
 
@@ -329,12 +330,12 @@ func getAuthorizedURL(client *Client, resourcePath string) (*AuthorizationURL, e
 
        if client.auth.isExpired() {
 
-           if dbg {log.Printf("Token has expired....Refreshing it...\n")}
+           if debugEnable {log.Printf("Token has expired....Refreshing it...\n")}
 
            err := client.refreshToken()
 
             if err != nil {
-                if dbg {log.Printf("Error while refreshing token %s\n", err.Error())}
+                if debugEnable {log.Printf("Error while refreshing token %s\n", err.Error())}
                 return nil, err
             }
        }
@@ -357,7 +358,7 @@ type Authorization struct {
 }
 
 func (auth Authorization) isExpired() bool {
-    if dbg {log.Printf("received at:%d expires in: %d\n", auth.ReceivedAt, auth.ExpiresIn)}
+    if debugEnable {log.Printf("received at:%d expires in: %d\n", auth.ReceivedAt, auth.ExpiresIn)}
     return ((auth.ReceivedAt + int64(auth.ExpiresIn)) <= (time.Now().Unix() + 60))
 }
 
@@ -460,14 +461,14 @@ func (httpClient MeliHttpClient) executeHttpRequest(method string, url string, b
     req, err := http.NewRequest(method, url, body)
 
     if err != nil {
-        log.Printf("Error when creating %s request %s.", method, err.Error())
+        if debugEnable {log.Printf("Error when creating %s request %s.", method, err.Error())}
         return nil, err
     }
 
     resp, err := http.DefaultClient.Do(req)
 
     if err != nil {
-        log.Printf("Error while calling url: %s\n Error: %s", url, err.Error())
+        if debugEnable {log.Printf("Error while calling url: %s\n Error: %s", url, err.Error())}
         return nil, err
     }
 
@@ -493,8 +494,6 @@ methods to modify the client
  */
 func (refresher MeliTokenRefresher) RefreshToken(client *Client) error {
 
-    const REFRESH_TOKEN = "refresh_token"
-
     authorizationURL := newAuthorizationURL(client.apiUrl + "/oauth/token")
     authorizationURL.addGrantType(REFRESH_TOKEN)
     authorizationURL.addClientId(client.id)
@@ -506,7 +505,7 @@ func (refresher MeliTokenRefresher) RefreshToken(client *Client) error {
 
     if resp, err = client.httpClient.Post(authorizationURL.string(), "application/json", *(new(io.Reader))); err != nil {
     //if resp, err = client.Post(authorizationURL.string(), ""); err != nil {
-        if dbg {log.Printf("Error: %s\n", err.Error())}
+        if debugEnable {log.Printf("Error: %s\n", err.Error())}
         return err
     }
 
@@ -518,12 +517,12 @@ func (refresher MeliTokenRefresher) RefreshToken(client *Client) error {
     resp.Body.Close()
 
     if err := json.Unmarshal(body, &(client.auth)); err != nil {
-        if dbg {log.Printf("Error while receiving the authorization %s %s", err.Error(), body)}
+        if debugEnable {log.Printf("Error while receiving the authorization %s %s", err.Error(), body)}
         return err
     }
 
     client.auth.ReceivedAt = time.Now().Unix()
 
-    if dbg {log.Printf("auth received at: %d expires in:%d\n", client.auth.ReceivedAt, client.auth.ExpiresIn)}
+    if debugEnable {log.Printf("auth received at: %d expires in:%d\n", client.auth.ReceivedAt, client.auth.ExpiresIn)}
     return nil
 }
