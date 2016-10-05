@@ -27,6 +27,7 @@ import (
     "io"
     "bytes"
     "net/url"
+    "errors"
 )
 
 const (
@@ -79,6 +80,93 @@ func Test_FullAuthenticated_Client_Is_Returned_When_UserCODE_And_ClientId_is_giv
 
     if client == nil || client.auth == ANONYMOUS {
         log.Printf("Error: Client is not a full one")
+        t.FailNow()
+    }
+
+}
+
+func Test_That_An_Error_Is_Returned_When_Authentication_Fails(t *testing.T) {
+
+    config := MeliConfig{
+
+        ClientId: CLIENT_ID,
+        UserCode: "NEW_CODE",
+        Secret: CLIENT_SECRET,
+        CallBackUrl: "http://www.example.com",
+        HttpClient: MockHttpClientPostFailure{},
+        TokenRefresher: MockTockenRefresher{},
+    }
+
+    _, error := MeliClient(config)
+
+    if error == nil {
+        log.Printf("Error: An error should have been received.")
+        t.FailNow()
+    }
+
+}
+
+func Test_That_MeliTokenRefresher_Returns_An_Error_When_Posting_Authorization_Fails(t *testing.T){
+
+    config := MeliConfig{
+
+        ClientId: CLIENT_ID,
+        UserCode: "ANOTHER_CODE",
+        Secret: CLIENT_SECRET,
+        CallBackUrl: "http://www.example.com",
+        HttpClient: MockHttpClient{},
+        TokenRefresher: MockTockenRefresher{},
+    }
+    client, error := MeliClient(config)
+
+    if error != nil {
+        log.Printf("Error: A client should have been returned.")
+        t.FailNow()
+    }
+
+    client.httpClient = MockHttpClientPostFailure{}
+
+    tokenRefresher := MeliTokenRefresher{}
+    error = tokenRefresher.RefreshToken(client)
+
+    if error == nil {
+        log.Printf("Error: An error should have been received.")
+        t.FailNow()
+    }
+
+}
+
+func Test_MeliTokenRefresher_Returns_An_Error_When_Authorization_Returns_A_HTTP_StatusCode_Different_From_200(t *testing.T){
+
+    config := MeliConfig{
+
+        ClientId: CLIENT_ID,
+        UserCode: "ANOTHER_CODE",
+        Secret: CLIENT_SECRET,
+        CallBackUrl: "http://www.example.com",
+        HttpClient: MockHttpClient{},
+        TokenRefresher: MockTockenRefresher{},
+    }
+    client, error := MeliClient(config)
+
+    if error != nil {
+        log.Printf("Error: A client should have been returned.")
+        t.FailNow()
+    }
+
+    client.httpClient = MockHttpClientPostNonOKStatusCode{}
+
+    tokenRefresher := MeliTokenRefresher{}
+    error = tokenRefresher.RefreshToken(client)
+
+    if error == nil {
+        log.Printf("Error: An error should not have been received.")
+        t.FailNow()
+    }
+
+    //TODO: Please..DO NOT COMPARE errors by using strings. Fix this up.
+    if strings.Compare(fmt.Sprintf("%s",error.Error()), "Refreshing token returned status code ") != 0 {
+        log.Printf("Error: An error should have been received.")
         t.FailNow()
     }
 
@@ -332,7 +420,6 @@ type MockHttpClient struct{
 
 func (httpClient MockHttpClient) Get(url string) (*http.Response, error){
 
-    log.Printf("Getting url %s ", url)
     resp := new (http.Response)
 
     if strings.Contains(url,"/sites") {
@@ -359,18 +446,15 @@ func (httpClient MockHttpClient) Post(uri string, bodyType string, body io.Reade
         grant_type := fullUri.Query().Get("grant_type")
 
         if strings.Compare(grant_type, "authorization_code") == 0 {
-            log.Printf("auth")
             code := fullUri.Query().Get("code")
 
             if strings.Compare(code, "bad code") == 0  {
 
-                log.Printf("reader")
                 resp.Body = ioutil.NopCloser(bytes.NewReader([]byte("{\"message\":\"Error validando el parámetro code\",\"error\":\"invalid_grant\"}")))
                 resp.StatusCode = http.StatusNotFound
 
             } else if strings.Compare(code, "valid code without refresh token") == 0 {
 
-                log.Printf("valid code")
                 resp.Body = ioutil.NopCloser(bytes.NewReader([]byte(
                 "{\"access_token\" : \"valid token\"," +
                 "\"token_type\" : \"bearer\"," +
@@ -379,9 +463,8 @@ func (httpClient MockHttpClient) Post(uri string, bodyType string, body io.Reade
 
                 resp.StatusCode = http.StatusOK
 
-            } else if strings.Compare(code, "valid code with refresh token") == 0 {
+            } else if strings.Compare(code, "valid code with refresh token") == 0 || strings.Compare(code, "ANOTHER_CODE") == 0 {
 
-                log.Printf("valid code with refresh")
                 resp.Body = ioutil.NopCloser(bytes.NewReader([]byte(
                 "{\"access_token\":\"valid token\"," +
                 "\"token_type\":\"bearer\"," +
@@ -396,7 +479,7 @@ func (httpClient MockHttpClient) Post(uri string, bodyType string, body io.Reade
             refresh := fullUri.Query().Get("refresh_token")
 
             if strings.Compare(refresh, "valid refresh token") == 0 {
-                log.Printf("valid code with refresh")
+
                 resp.Body = ioutil.NopCloser(bytes.NewReader([]byte(
                 "{\"access_token\":\"valid token\"," +
                 "\"token_type\":\"bearer\"," +
@@ -471,5 +554,48 @@ func (httpClient MockHttpClient) Delete(uri string, body io.Reader) (*http.Respo
     }
 
     return resp, nil
+}
 
+
+type MockHttpClientPostFailure struct{
+
+}
+
+func (httpClient MockHttpClientPostFailure) Post(uri string, bodyType string, body io.Reader) (*http.Response, error) {
+    return nil, errors.New("Error")
+}
+func (httpClient MockHttpClientPostFailure) Get(url string) (*http.Response, error){
+    return nil, nil
+}
+
+func (httpClient MockHttpClientPostFailure) Delete(uri string, body io.Reader) (*http.Response, error){
+    return nil, nil
+}
+
+func (httpClient MockHttpClientPostFailure) Put(uri string, body io.Reader) (*http.Response, error){
+    return nil,nil
+}
+
+
+
+type MockHttpClientPostNonOKStatusCode struct{
+
+}
+
+func (httpClient MockHttpClientPostNonOKStatusCode) Post(uri string, bodyType string, body io.Reader) (*http.Response, error) {
+
+    httpResponse := http.Response{}
+    httpResponse.StatusCode = http.StatusForbidden
+    return new (http.Response), nil
+}
+func (httpClient MockHttpClientPostNonOKStatusCode) Get(url string) (*http.Response, error){
+    return nil, nil
+}
+
+func (httpClient MockHttpClientPostNonOKStatusCode) Delete(uri string, body io.Reader) (*http.Response, error){
+    return nil, nil
+}
+
+func (httpClient MockHttpClientPostNonOKStatusCode) Put(uri string, body io.Reader) (*http.Response, error){
+    return nil,nil
 }

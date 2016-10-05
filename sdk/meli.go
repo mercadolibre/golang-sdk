@@ -72,12 +72,11 @@ var clientByUserMutex sync.Mutex
 var ANONYMOUS = Authorization{}
 var authMutex = &sync.Mutex{}
 
-var debugEnable bool
+var debugEnable bool = false //Set this true if you want to see debug messages
 
 func init() {
     log.SetFlags(log.LstdFlags | log.Lshortfile)
     clientByUser = make(map[string] *Client)
-    debugEnable = false  //Set this true if you want to see debug messages
 }
 
 /*
