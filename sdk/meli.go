@@ -314,6 +314,10 @@ func (client *Client) Delete(resourcePath string ) (*http.Response, error) {
     return httpErrorHandler(client, resourcePath, HttpDelete{httpClient:client.httpClient})
 }
 
+func (client Client) IsAuthorized() bool{
+
+    return (client.auth != ANONYMOUS)
+}
 /*
 This method returns the URL + Token to be used by each HTTP request.
 If Token needs to be refreshed, then this method will send a POST to ML API to refresh it.

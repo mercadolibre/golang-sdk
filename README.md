@@ -154,4 +154,6 @@ You can find some examples by taking a look at the main.go file.
 
 To run the tests run ```make test```.
 
+**Note:** Please, make sure all the unit test are passing before committing any change.
+
 Thanks for helping!

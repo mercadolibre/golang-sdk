@@ -172,6 +172,40 @@ func Test_MeliTokenRefresher_Returns_An_Error_When_Authorization_Returns_A_HTTP_
 
 }
 
+func Test_Return_Authorized_FALSE_When_Client_Is_NOT_Authorized ( t *testing.T){
+
+    client, _ := Meli(CLIENT_ID,"","", "www.example.com/me")
+
+    if client.IsAuthorized() == true {
+        log.Printf("Client should not be authorized")
+        t.FailNow()
+    }
+}
+
+func Test_Return_Authorized_TRUE_When_Client_Is_Authorized ( t *testing.T){
+
+    config := MeliConfig{
+
+        ClientId: CLIENT_ID,
+        UserCode: "AUTHORIZED_CLIENT",
+        Secret: CLIENT_SECRET,
+        CallBackUrl: "http://www.example.com",
+        HttpClient: MockHttpClient{},
+        TokenRefresher: MockTockenRefresher{},
+    }
+
+    client, err := MeliClient(config)
+
+    if err != nil {
+        log.Printf("Error: %s", err.Error())
+        t.FailNow()
+    }
+    if client.IsAuthorized() != true {
+        log.Printf("Client should be authorized")
+        t.FailNow()
+    }
+}
+
 func Test_GET_public_API_sites_works_properly ( t *testing.T){
 
     client, err := newTestAnonymousClient(API_TEST)
@@ -463,7 +497,9 @@ func (httpClient MockHttpClient) Post(uri string, bodyType string, body io.Reade
 
                 resp.StatusCode = http.StatusOK
 
-            } else if strings.Compare(code, "valid code with refresh token") == 0 || strings.Compare(code, "ANOTHER_CODE") == 0 {
+            } else if strings.Compare(code, "valid code with refresh token") == 0 ||
+                      strings.Compare(code, "ANOTHER_CODE") == 0 ||
+                      strings.Compare(code, "AUTHORIZED_CLIENT") == 0 {
 
                 resp.Body = ioutil.NopCloser(bytes.NewReader([]byte(
                 "{\"access_token\":\"valid token\"," +
