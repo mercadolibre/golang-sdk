@@ -19,13 +19,13 @@ package sdk
 import (
 	"bytes"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/mercadolibre/go-sdk/sdk"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
 	"sync"
+	"github.com/gorilla/mux"
+	"github.com/mercadolibre/golang-sdk"
 )
 
 const (
