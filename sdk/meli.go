@@ -65,27 +65,25 @@ const (
 	REFRESH_TOKEN      = "refresh_token"
 )
 
-var publicClient = &Client{apiUrl: API_URL, auth: ANONYMOUS, httpClient: MeliHttpClient{}, tokenRefresher: MeliTokenRefresher{}}
+var publicClient = &Client{apiUrl: API_URL, auth: anonymous, httpClient: MeliHttpClient{}, tokenRefresher: MeliTokenRefresher{}}
 var clientByUser map[string]*Client
 var clientByUserMutex sync.Mutex
-var ANONYMOUS = Authorization{}
+var anonymous = Authorization{}
 var authMutex = &sync.Mutex{}
 
-var debugEnable bool = false //Set this true if you want to see debug messages
+var debugEnable = false //Set this true if you want to see debug messages
 
 func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	clientByUser = make(map[string]*Client)
 }
 
-/*
-This function returns the URL to be used for user authentication and authorization
-*/
-func GetAuthURL(clientId int64, base_site, callback string) string {
+/*GetAuthURL function returns the URL for the user to authenticate and authorize*/
+func GetAuthURL(clientID int64, base_site, callback string) string {
 
 	authURL := newAuthorizationURL(base_site + "/authorization")
 	authURL.addResponseType("code")
-	authURL.addClientId(clientId)
+	authURL.addClientId(clientID)
 	authURL.addRedirectUri(callback)
 
 	return authURL.string()
@@ -100,8 +98,8 @@ type MeliConfig struct {
 	TokenRefresher TokenRefresher
 }
 
-/*
-This function returns a Client which can be used to call mercadolibre API
+/*Meli function returns a Client which can be used to call mercadolibre API.
+
 client id, code and secret are generated when registering your application by using Application Manager
 
 Please, visit the following link for further information: http://developers.mercadolibre.com/application-manager/
@@ -328,7 +326,7 @@ func (client *Client) Delete(resourcePath string) (*http.Response, error) {
 
 func (client Client) IsAuthorized() bool {
 
-	return (client.auth != ANONYMOUS)
+	return (client.auth != anonymous)
 }
 
 /*
@@ -340,7 +338,7 @@ func getAuthorizedURL(client *Client, resourcePath string) (*AuthorizationURL, e
 	finalUrl := newAuthorizationURL(client.apiUrl + resourcePath)
 	var err error
 
-	if client.auth != ANONYMOUS {
+	if client.auth != anonymous {
 
 		authMutex.Lock()
 
@@ -500,21 +498,20 @@ func (httpClient MeliHttpClient) executeHttpRequest(method string, url string, b
 	return resp, nil
 }
 
-/**
-This interface allows you to extend the mechanism Meli client has, to change the way authentication/authorization tokens
- are negotiated.
-*/
+/**TokenRefresher is an interface which allows you to implement your own authentication/authorization mechanism.*/
 type TokenRefresher interface {
 	RefreshToken(*Client) error
 }
 
+/**MeliTokenRefresher implements ToeknRefresher interface.
+This type is the default implementation provided by the SDK to deal with
+Oauth token handling.
+*/
 type MeliTokenRefresher struct {
 }
 
-/*
-This method has side effects. Alters the token that is within the client.
-Every time this method is called, then locking has to be used to avoid different
-methods to modify the client
+/**RefreshToken is a method which has side effects. This one, alters the token that is within the client.
+Every time this method is called some locking mechanism has to be used to avoid concurrency problems when client param is modified.
 */
 func (refresher MeliTokenRefresher) RefreshToken(client *Client) error {
 
@@ -528,7 +525,6 @@ func (refresher MeliTokenRefresher) RefreshToken(client *Client) error {
 	var err error
 
 	if resp, err = client.httpClient.Post(authorizationURL.string(), "application/json", *(new(io.Reader))); err != nil {
-		//if resp, err = client.Post(authorizationURL.string(), ""); err != nil {
 		if debugEnable {
 			log.Printf("Error: %s\n", err.Error())
 		}

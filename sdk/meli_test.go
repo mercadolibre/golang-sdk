@@ -56,7 +56,7 @@ func Test_Generic_Client_Is_Returned_When_No_UserCODE_is_given(t *testing.T) {
 
 	client, _ := Meli(CLIENT_ID, "", CLIENT_SECRET, "htt://www.example.com")
 
-	if client.auth != ANONYMOUS {
+	if client.auth != anonymous {
 		log.Printf("Error: Client is not ANONYMOUS")
 		t.FailNow()
 	}
@@ -77,7 +77,7 @@ func Test_FullAuthenticated_Client_Is_Returned_When_UserCODE_And_ClientId_is_giv
 
 	client, _ := MeliClient(config)
 
-	if client == nil || client.auth == ANONYMOUS {
+	if client == nil || client.auth == anonymous {
 		log.Printf("Error: Client is not a full one")
 		t.FailNow()
 	}
@@ -425,7 +425,7 @@ Clients for testing purposes
 */
 func newTestAnonymousClient(apiUrl string) (*Client, error) {
 
-	client := &Client{apiUrl: apiUrl, auth: ANONYMOUS, httpClient: MockHttpClient{}}
+	client := &Client{apiUrl: apiUrl, auth: anonymous, httpClient: MockHttpClient{}}
 
 	return client, nil
 }
