@@ -41,7 +41,7 @@ func Test_URL_for_authentication_is_properly_returned(t *testing.T) {
 
 	expectedUrl := "https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=123456&redirect_uri=http%3A%2F%2Fsomeurl.com"
 
-	url := GetAuthURL(CLIENT_ID, AUTH_URL_MLA, "http://someurl.com")
+	url := GetAuthURL(CLIENT_ID, AuthURLMLA, "http://someurl.com")
 
 	if url != expectedUrl {
 		log.Printf("Error: The URL is different from the one that was expected.")
@@ -56,7 +56,7 @@ func Test_Generic_Client_Is_Returned_When_No_UserCODE_is_given(t *testing.T) {
 
 	client, _ := Meli(CLIENT_ID, "", CLIENT_SECRET, "htt://www.example.com")
 
-	if client.auth != ANONYMOUS {
+	if client.auth != anonymous {
 		log.Printf("Error: Client is not ANONYMOUS")
 		t.FailNow()
 	}
@@ -67,17 +67,17 @@ func Test_FullAuthenticated_Client_Is_Returned_When_UserCODE_And_ClientId_is_giv
 
 	config := MeliConfig{
 
-		ClientId:       CLIENT_ID,
+		ClientID:       CLIENT_ID,
 		UserCode:       USER_CODE,
 		Secret:         CLIENT_SECRET,
-		CallBackUrl:    "http://www.example.com",
-		HttpClient:     MockHttpClient{},
+		CallBackURL:    "http://www.example.com",
+		HTTPClient:     MockHttpClient{},
 		TokenRefresher: MockTockenRefresher{},
 	}
 
 	client, _ := MeliClient(config)
 
-	if client == nil || client.auth == ANONYMOUS {
+	if client == nil || client.auth == anonymous {
 		log.Printf("Error: Client is not a full one")
 		t.FailNow()
 	}
@@ -88,11 +88,11 @@ func Test_That_An_Error_Is_Returned_When_Authentication_Fails(t *testing.T) {
 
 	config := MeliConfig{
 
-		ClientId:       CLIENT_ID,
+		ClientID:       CLIENT_ID,
 		UserCode:       "NEW_CODE",
 		Secret:         CLIENT_SECRET,
-		CallBackUrl:    "http://www.example.com",
-		HttpClient:     MockHttpClientPostFailure{},
+		CallBackURL:    "http://www.example.com",
+		HTTPClient:     MockHttpClientPostFailure{},
 		TokenRefresher: MockTockenRefresher{},
 	}
 
@@ -109,11 +109,11 @@ func Test_That_MeliTokenRefresher_Returns_An_Error_When_Posting_Authorization_Fa
 
 	config := MeliConfig{
 
-		ClientId:       CLIENT_ID,
+		ClientID:       CLIENT_ID,
 		UserCode:       "ANOTHER_CODE",
 		Secret:         CLIENT_SECRET,
-		CallBackUrl:    "http://www.example.com",
-		HttpClient:     MockHttpClient{},
+		CallBackURL:    "http://www.example.com",
+		HTTPClient:     MockHttpClient{},
 		TokenRefresher: MockTockenRefresher{},
 	}
 	client, error := MeliClient(config)
@@ -139,11 +139,11 @@ func Test_MeliTokenRefresher_Returns_An_Error_When_Authorization_Returns_A_HTTP_
 
 	config := MeliConfig{
 
-		ClientId:       CLIENT_ID,
+		ClientID:       CLIENT_ID,
 		UserCode:       "ANOTHER_CODE",
 		Secret:         CLIENT_SECRET,
-		CallBackUrl:    "http://www.example.com",
-		HttpClient:     MockHttpClient{},
+		CallBackURL:    "http://www.example.com",
+		HTTPClient:     MockHttpClient{},
 		TokenRefresher: MockTockenRefresher{},
 	}
 	client, error := MeliClient(config)
@@ -185,11 +185,11 @@ func Test_Return_Authorized_TRUE_When_Client_Is_Authorized(t *testing.T) {
 
 	config := MeliConfig{
 
-		ClientId:       CLIENT_ID,
+		ClientID:       CLIENT_ID,
 		UserCode:       "AUTHORIZED_CLIENT",
 		Secret:         CLIENT_SECRET,
-		CallBackUrl:    "http://www.example.com",
-		HttpClient:     MockHttpClient{},
+		CallBackURL:    "http://www.example.com",
+		HTTPClient:     MockHttpClient{},
 		TokenRefresher: MockTockenRefresher{},
 	}
 
@@ -352,10 +352,10 @@ func Test_DELETE_an_item_returns_200_when_token_IS_EXPIRED(t *testing.T) {
 
 func Test_AuthorizationURL_adds_a_params_separator_when_needed(t *testing.T) {
 
-	auth := newAuthorizationURL(API_URL + "/authorizationauth")
-	auth.addGrantType(AUTHORIZATION_CODE)
+	auth := newAuthorizationURL(APIURL + "/authorizationauth")
+	auth.addGrantType(AuthoricationCode)
 
-	url := API_URL + "/authorizationauth?" + "grant_type=" + AUTHORIZATION_CODE
+	url := APIURL + "/authorizationauth?" + "grant_type=" + AuthoricationCode
 
 	if strings.Compare(url, auth.string()) != 0 {
 		log.Printf("url was different from what was expected\n expected: %s \n obtained: %s \n", url, auth.string())
@@ -365,11 +365,11 @@ func Test_AuthorizationURL_adds_a_params_separator_when_needed(t *testing.T) {
 
 func Test_AuthorizationURL_adds_a_query_param_separator_when_needed(t *testing.T) {
 
-	auth := newAuthorizationURL(API_URL + "/authorizationauth")
-	auth.addGrantType(AUTHORIZATION_CODE)
+	auth := newAuthorizationURL(APIURL + "/authorizationauth")
+	auth.addGrantType(AuthoricationCode)
 	auth.addClientId(1213213)
 
-	url := API_URL + "/authorizationauth?" + "grant_type=" + AUTHORIZATION_CODE + "&client_id=1213213"
+	url := APIURL + "/authorizationauth?" + "grant_type=" + AuthoricationCode + "&client_id=1213213"
 
 	if strings.Compare(url, auth.string()) != 0 {
 		log.Printf("url was different from what was expected\n expected: %s \n obtained: %s \n", url, auth.string())
@@ -425,14 +425,14 @@ Clients for testing purposes
 */
 func newTestAnonymousClient(apiUrl string) (*Client, error) {
 
-	client := &Client{apiUrl: apiUrl, auth: ANONYMOUS, httpClient: MockHttpClient{}}
+	client := &Client{apiURL: apiUrl, auth: anonymous, httpClient: MockHttpClient{}}
 
 	return client, nil
 }
 
 func newTestClient(id int64, code string, secret string, redirectUrl string, apiUrl string) (*Client, error) {
 
-	client := &Client{id: id, code: code, secret: secret, redirectUrl: redirectUrl, apiUrl: apiUrl, httpClient: MockHttpClient{}, tokenRefresher: MockTockenRefresher{}}
+	client := &Client{id: id, code: code, secret: secret, redirectURL: redirectUrl, apiURL: apiUrl, httpClient: MockHttpClient{}, tokenRefresher: MockTockenRefresher{}}
 
 	auth, err := client.authorize()
 

@@ -46,62 +46,60 @@ import (
 )
 
 const (
-	AUTH_URL_MLA = "https://auth.mercadolibre.com.ar" // Argentina
-	AUTH_URL_MLB = "https://auth.mercadolivre.com.br" // Brasil
-	AUTH_URL_MCO = "https://auth.mercadolibre.com.co" // Colombia
-	AUTH_URL_MCR = "https://auth.mercadolibre.com.cr" // Costa Rica
-	AUTH_URL_MEC = "https://auth.mercadolibre.com.ec" // Ecuador
-	AUTH_URL_MLC = "https://auth.mercadolibre.cl"     // Chile
-	AUTH_URL_MLM = "https://auth.mercadolibre.com.mx" // Mexico
-	AUTH_URL_MLU = "https://auth.mercadolibre.com.uy" // Uruguay
-	AUTH_URL_MLV = "https://auth.mercadolibre.com.ve" // Venezuela
-	AUTH_URL_MPA = "https://auth.mercadolibre.com.pa" // Panama
-	AUTH_URL_MPE = "https://auth.mercadolibre.com.pe" // Peru
-	AUTH_URL_MPT = "https://auth.mercadolivre.pt"     // Portugal
-	AUTH_URL_MRD = "https://auth.mercadolibre.com.do" // Dominicana
+	AuthURLMLA = "https://auth.mercadolibre.com.ar" // Argentina
+	AuthURLMlb = "https://auth.mercadolivre.com.br" // Brasil
+	AuthURLMco = "https://auth.mercadolibre.com.co" // Colombia
+	AuthURLMcr = "https://auth.mercadolibre.com.cr" // Costa Rica
+	AuthURLMec = "https://auth.mercadolibre.com.ec" // Ecuador
+	AuthURLMlc = "https://auth.mercadolibre.cl"     // Chile
+	AuthURLMLM = "https://auth.mercadolibre.com.mx" // Mexico
+	AuthURLMlu = "https://auth.mercadolibre.com.uy" // Uruguay
+	AuthURLMlv = "https://auth.mercadolibre.com.ve" // Venezuela
+	AuthURLMpa = "https://auth.mercadolibre.com.pa" // Panama
+	AuthURLMpe = "https://auth.mercadolibre.com.pe" // Peru
+	AuthURLMpt = "https://auth.mercadolivre.pt"     // Portugal
+	AuthURLMrd = "https://auth.mercadolibre.com.do" // Dominicana
 
-	AUTHORIZATION_CODE = "authorization_code"
-	API_URL            = "https://api.mercadolibre.com"
-	REFRESH_TOKEN      = "refresh_token"
+	AuthoricationCode = "authorization_code"
+	APIURL            = "https://api.mercadolibre.com"
+	RefreshToken      = "refresh_token"
 )
 
-var publicClient = &Client{apiUrl: API_URL, auth: ANONYMOUS, httpClient: MeliHttpClient{}, tokenRefresher: MeliTokenRefresher{}}
+var publicClient = &Client{apiURL: APIURL, auth: anonymous, httpClient: MeliHTTPClient{}, tokenRefresher: MeliTokenRefresher{}}
 var clientByUser map[string]*Client
 var clientByUserMutex sync.Mutex
-var ANONYMOUS = Authorization{}
+var anonymous = Authorization{}
 var authMutex = &sync.Mutex{}
 
-var debugEnable bool = false //Set this true if you want to see debug messages
+var debugEnable = false //Set this true if you want to see debug messages
 
 func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	clientByUser = make(map[string]*Client)
 }
 
-/*
-This function returns the URL to be used for user authentication and authorization
-*/
-func GetAuthURL(clientId int64, base_site, callback string) string {
+/*GetAuthURL function returns the URL for the user to authenticate and authorize*/
+func GetAuthURL(clientID int64, baseSite, callback string) string {
 
-	authURL := newAuthorizationURL(base_site + "/authorization")
+	authURL := newAuthorizationURL(baseSite + "/authorization")
 	authURL.addResponseType("code")
-	authURL.addClientId(clientId)
-	authURL.addRedirectUri(callback)
+	authURL.addClientId(clientID)
+	authURL.addRedirectURI(callback)
 
 	return authURL.string()
 }
 
 type MeliConfig struct {
-	ClientId       int64
+	ClientID       int64
 	UserCode       string
 	Secret         string
-	CallBackUrl    string
-	HttpClient     HttpClient
+	CallBackURL    string
+	HTTPClient     HTTPClient
 	TokenRefresher TokenRefresher
 }
 
-/*
-This function returns a Client which can be used to call mercadolibre API
+/*Meli function returns a Client which can be used to call mercadolibre API.
+
 client id, code and secret are generated when registering your application by using Application Manager
 
 Please, visit the following link for further information: http://developers.mercadolibre.com/application-manager/
@@ -112,14 +110,14 @@ the public mercadolibre API.
 If userCode has a value, then a full authenticated client will be returned. This one is able to query either public and private
 mercadolibre API.
 */
-func Meli(clientId int64, userCode string, secret string, callBackUrl string) (*Client, error) {
+func Meli(clientID int64, userCode string, secret string, callBackURL string) (*Client, error) {
 
 	config := MeliConfig{
-		ClientId:       clientId,
+		ClientID:       clientID,
 		UserCode:       userCode,
 		Secret:         secret,
-		CallBackUrl:    callBackUrl,
-		HttpClient:     MeliHttpClient{},
+		CallBackURL:    callBackURL,
+		HTTPClient:     MeliHTTPClient{},
 		TokenRefresher: MeliTokenRefresher{},
 	}
 
@@ -144,7 +142,7 @@ func MeliClient(config MeliConfig) (*Client, error) {
 	defer clientByUserMutex.Unlock()
 
 	//The same client is going to be returned if the same applicationId and userCode is provided.
-	key := strconv.FormatInt(config.ClientId, 10) + config.UserCode
+	key := strconv.FormatInt(config.ClientID, 10) + config.UserCode
 
 	var client *Client
 	client = clientByUser[key]
@@ -152,17 +150,17 @@ func MeliClient(config MeliConfig) (*Client, error) {
 	if client == nil {
 
 		client = &Client{
-			id:             config.ClientId,
+			id:             config.ClientID,
 			code:           config.UserCode,
 			secret:         config.Secret,
-			redirectUrl:    config.CallBackUrl,
-			apiUrl:         API_URL,
-			httpClient:     config.HttpClient,
+			redirectURL:    config.CallBackURL,
+			apiURL:         APIURL,
+			httpClient:     config.HTTPClient,
 			tokenRefresher: config.TokenRefresher,
 		}
 
 		if debugEnable {
-			log.Printf("Building a client: %p for clientid:%d code:%s\n", client, config.ClientId, config.UserCode)
+			log.Printf("Building a client: %p for clientid:%d code:%s\n", client, config.ClientID, config.UserCode)
 		}
 
 		auth, err := client.authorize()
@@ -187,15 +185,15 @@ Given that error handling for all the HTTP Methods is pretty the same, then an i
 going to be called by the handler to execute the different HTTP Methods, then check the response and handle the error
 */
 type Callback interface {
-	Call(apiUrl string) (*http.Response, error)
+	Call(apiURL string) (*http.Response, error)
 }
 
 func httpErrorHandler(client *Client, resource string, httpMethod Callback) (*http.Response, error) {
 
-	var apiUrl *AuthorizationURL
+	var apiURL *AuthorizationURL
 	var err error
 
-	if apiUrl, err = getAuthorizedURL(client, resource); err != nil {
+	if apiURL, err = getAuthorizedURL(client, resource); err != nil {
 		if debugEnable {
 			log.Printf("Error %s", err)
 		}
@@ -203,9 +201,9 @@ func httpErrorHandler(client *Client, resource string, httpMethod Callback) (*ht
 	}
 
 	var resp *http.Response
-	if resp, err = httpMethod.Call(apiUrl.string()); err != nil {
+	if resp, err = httpMethod.Call(apiURL.string()); err != nil {
 		if debugEnable {
-			log.Printf("Error while calling url: %s \n Error: %s", apiUrl.string(), err)
+			log.Printf("Error while calling url: %s \n Error: %s", apiURL.string(), err)
 		}
 		return nil, err
 	}
@@ -216,48 +214,48 @@ func httpErrorHandler(client *Client, resource string, httpMethod Callback) (*ht
 /*
 HTTP Methods to be called by httpErrorHandler
 */
-type HttpGet struct {
-	httpClient HttpClient
+type HTTPGet struct {
+	httpClient HTTPClient
 }
 
-func (callback HttpGet) Call(url string) (*http.Response, error) {
+func (callback HTTPGet) Call(url string) (*http.Response, error) {
 	return callback.httpClient.Get(url)
 }
 
-type HttpPost struct {
-	httpClient HttpClient
+type HTTPPost struct {
+	httpClient HTTPClient
 	body       string
 }
 
-func (callback HttpPost) Call(url string) (*http.Response, error) {
+func (callback HTTPPost) Call(url string) (*http.Response, error) {
 	return callback.httpClient.Post(url, "application/json", bytes.NewReader([]byte(callback.body)))
 }
 
-type HttpPut struct {
-	httpClient HttpClient
+type HTTPPut struct {
+	httpClient HTTPClient
 	body       string
 }
 
-func (callback HttpPut) Call(url string) (*http.Response, error) {
+func (callback HTTPPut) Call(url string) (*http.Response, error) {
 	return callback.httpClient.Put(url, strings.NewReader(callback.body))
 }
 
-type HttpDelete struct {
-	httpClient HttpClient
+type HTTPDelete struct {
+	httpClient HTTPClient
 }
 
-func (callback HttpDelete) Call(url string) (*http.Response, error) {
+func (callback HTTPDelete) Call(url string) (*http.Response, error) {
 	return callback.httpClient.Delete(url, nil)
 }
 
 type Client struct {
-	apiUrl         string
+	apiURL         string
 	id             int64
 	secret         string
 	code           string
-	redirectUrl    string
+	redirectURL    string
 	auth           Authorization
-	httpClient     HttpClient
+	httpClient     HTTPClient
 	tokenRefresher TokenRefresher
 }
 
@@ -267,12 +265,12 @@ to interact with ML API
 */
 func (client *Client) authorize() (*Authorization, error) {
 
-	authURL := newAuthorizationURL(client.apiUrl + "/oauth/token")
-	authURL.addGrantType(AUTHORIZATION_CODE)
+	authURL := newAuthorizationURL(client.apiURL + "/oauth/token")
+	authURL.addGrantType(AuthoricationCode)
 	authURL.addClientId(client.id)
 	authURL.addClientSecret(client.secret)
 	authURL.addCode(client.code)
-	authURL.addRedirectUri(client.redirectUrl)
+	authURL.addRedirectURI(client.redirectURL)
 
 	var resp *http.Response
 	var err error
@@ -308,27 +306,27 @@ func (client *Client) refreshToken() error {
 
 func (client *Client) Get(resourcePath string) (*http.Response, error) {
 
-	return httpErrorHandler(client, resourcePath, HttpGet{httpClient: client.httpClient})
+	return httpErrorHandler(client, resourcePath, HTTPGet{httpClient: client.httpClient})
 }
 
 func (client *Client) Post(resourcePath string, body string) (*http.Response, error) {
 
-	return httpErrorHandler(client, resourcePath, HttpPost{httpClient: client.httpClient, body: body})
+	return httpErrorHandler(client, resourcePath, HTTPPost{httpClient: client.httpClient, body: body})
 }
 
 func (client *Client) Put(resourcePath string, body string) (*http.Response, error) {
 
-	return httpErrorHandler(client, resourcePath, HttpPut{httpClient: client.httpClient, body: body})
+	return httpErrorHandler(client, resourcePath, HTTPPut{httpClient: client.httpClient, body: body})
 }
 
 func (client *Client) Delete(resourcePath string) (*http.Response, error) {
 
-	return httpErrorHandler(client, resourcePath, HttpDelete{httpClient: client.httpClient})
+	return httpErrorHandler(client, resourcePath, HTTPDelete{httpClient: client.httpClient})
 }
 
 func (client Client) IsAuthorized() bool {
 
-	return (client.auth != ANONYMOUS)
+	return (client.auth != anonymous)
 }
 
 /*
@@ -337,10 +335,10 @@ If Token needs to be refreshed, then this method will send a POST to ML API to r
 */
 func getAuthorizedURL(client *Client, resourcePath string) (*AuthorizationURL, error) {
 
-	finalUrl := newAuthorizationURL(client.apiUrl + resourcePath)
+	finalURL := newAuthorizationURL(client.apiURL + resourcePath)
 	var err error
 
-	if client.auth != ANONYMOUS {
+	if client.auth != anonymous {
 
 		authMutex.Lock()
 
@@ -361,10 +359,10 @@ func getAuthorizedURL(client *Client, resourcePath string) (*AuthorizationURL, e
 		}
 
 		authMutex.Unlock()
-		finalUrl.addAccessToken(client.auth.AccessToken)
+		finalURL.addAccessToken(client.auth.AccessToken)
 	}
 
-	return finalUrl, err
+	return finalURL, err
 }
 
 type Authorization struct {
@@ -407,7 +405,7 @@ func (u *AuthorizationURL) addCode(value string) {
 	u.add("code=" + url.QueryEscape(value))
 }
 
-func (u *AuthorizationURL) addRedirectUri(uri string) {
+func (u *AuthorizationURL) addRedirectURI(uri string) {
 	u.add("redirect_uri=" + url.QueryEscape(uri))
 }
 
@@ -447,37 +445,37 @@ func newAuthorizationURL(baseURL string) *AuthorizationURL {
 /**
 This interface allows you to change or mock the way Meli client make HTTP Requests.
 */
-type HttpClient interface {
+type HTTPClient interface {
 	Get(url string) (*http.Response, error)
 	Post(url string, bodyType string, body io.Reader) (*http.Response, error)
 	Put(url string, body io.Reader) (*http.Response, error)
 	Delete(url string, body io.Reader) (*http.Response, error)
 }
 
-type MeliHttpClient struct {
+type MeliHTTPClient struct {
 }
 
-func (httpClient MeliHttpClient) Get(url string) (*http.Response, error) {
+func (httpClient MeliHTTPClient) Get(url string) (*http.Response, error) {
 	return http.Get(url)
 }
 
-func (httpClient MeliHttpClient) Post(url string, bodyType string, body io.Reader) (*http.Response, error) {
+func (httpClient MeliHTTPClient) Post(url string, bodyType string, body io.Reader) (*http.Response, error) {
 
 	return http.Post(url, bodyType, body)
 }
 
-func (httpClient MeliHttpClient) Put(url string, body io.Reader) (*http.Response, error) {
+func (httpClient MeliHTTPClient) Put(url string, body io.Reader) (*http.Response, error) {
 
-	return httpClient.executeHttpRequest(http.MethodPut, url, body)
+	return httpClient.executeHTTPRequest(http.MethodPut, url, body)
 }
 
-func (httpClient MeliHttpClient) Delete(url string, body io.Reader) (*http.Response, error) {
+func (httpClient MeliHTTPClient) Delete(url string, body io.Reader) (*http.Response, error) {
 
-	return httpClient.executeHttpRequest(http.MethodDelete, url, body)
+	return httpClient.executeHTTPRequest(http.MethodDelete, url, body)
 
 }
 
-func (httpClient MeliHttpClient) executeHttpRequest(method string, url string, body io.Reader) (*http.Response, error) {
+func (httpClient MeliHTTPClient) executeHTTPRequest(method string, url string, body io.Reader) (*http.Response, error) {
 
 	req, err := http.NewRequest(method, url, body)
 
@@ -500,26 +498,25 @@ func (httpClient MeliHttpClient) executeHttpRequest(method string, url string, b
 	return resp, nil
 }
 
-/**
-This interface allows you to extend the mechanism Meli client has, to change the way authentication/authorization tokens
- are negotiated.
-*/
+/**TokenRefresher is an interface which allows you to implement your own authentication/authorization mechanism.*/
 type TokenRefresher interface {
 	RefreshToken(*Client) error
 }
 
+/**MeliTokenRefresher implements ToeknRefresher interface.
+This type is the default implementation provided by the SDK to deal with
+Oauth token handling.
+*/
 type MeliTokenRefresher struct {
 }
 
-/*
-This method has side effects. Alters the token that is within the client.
-Every time this method is called, then locking has to be used to avoid different
-methods to modify the client
+/**RefreshToken is a method which has side effects. This one, alters the token that is within the client.
+Every time this method is called some locking mechanism has to be used to avoid concurrency problems when client param is modified.
 */
 func (refresher MeliTokenRefresher) RefreshToken(client *Client) error {
 
-	authorizationURL := newAuthorizationURL(client.apiUrl + "/oauth/token")
-	authorizationURL.addGrantType(REFRESH_TOKEN)
+	authorizationURL := newAuthorizationURL(client.apiURL + "/oauth/token")
+	authorizationURL.addGrantType(RefreshToken)
 	authorizationURL.addClientId(client.id)
 	authorizationURL.addClientSecret(client.secret)
 	authorizationURL.addRefreshToken(client.auth.RefreshToken)
@@ -528,7 +525,6 @@ func (refresher MeliTokenRefresher) RefreshToken(client *Client) error {
 	var err error
 
 	if resp, err = client.httpClient.Post(authorizationURL.string(), "application/json", *(new(io.Reader))); err != nil {
-		//if resp, err = client.Post(authorizationURL.string(), ""); err != nil {
 		if debugEnable {
 			log.Printf("Error: %s\n", err.Error())
 		}

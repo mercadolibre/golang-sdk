@@ -19,83 +19,87 @@ package sdk
 import (
 	"bytes"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/mercadolibre/go-sdk/sdk"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/gorilla/mux"
+	"github.com/mercadolibre/golang-sdk"
 )
 
 const (
-	CLIENT_ID     = 2016679662291617
-	CLIENT_SECRET = "bA89yqE9lPeXwcZkOLBTdKGDXYFbApuZ"
-	HOST          = "http://localhost:8080"
+	clientID     = 2016679662291617
+	clientSecret = "bA89yqE9lPeXwcZkOLBTdKGDXYFbApuZ"
+	host         = "http://localhost:8080"
 )
 
 var userCode map[string]string
 var userCodeMutex sync.Mutex
 
+/*Main application method.*/
 func main() {
 	userCode = make(map[string]string)
 	log.Fatal(http.ListenAndServe(":8080", getRouter()))
 }
 
 type item struct {
-	Id string
+	ID string
 }
 
-type Route struct {
+type route struct {
 	Name        string
 	Method      string
 	Pattern     string
 	HandlerFunc http.HandlerFunc
 }
 
-type Routes []Route
+type routes []route
 
+/*getRouter returns a configured Router with all the paths and http supported methods*/
 func getRouter() *mux.Router {
 
-	routes := Routes{
+	routes := routes{
 
-		Route{
+		route{
 			"item",
 			"GET",
 			"/{userId}/items/{itemId}",
 			getItem,
 		},
-		Route{
+		route{
 			"item",
 			"POST",
 			"/{userId}/items/{itemId}",
 			postItem,
 		},
-		Route{
+		route{
 			"sites",
 			"GET",
 			"/{userId}/sites",
 			getSites,
 		},
-		Route{
+		route{
 			"me",
 			"GET",
 			"/{userId}/users/me",
 			me,
 		},
-		Route{
+		route{
 			"addresses",
 			"GET",
 			"/{userId}/users/addresses",
 			addresses,
 		},
-		Route{
+		route{
 			"index",
 			"GET",
 			"/",
 			returnLinks,
 		},
 	}
+
 	router := mux.NewRouter()
 
 	for _, route := range routes {
@@ -114,19 +118,20 @@ func getRouter() *mux.Router {
 	return router
 }
 
-const USER_ID = "userId"
-const ITEM_ID = "itemId"
+const userID = "userId"
+const itemID = "itemId"
 
+/*getItem example: performs a GET Method against items MELI API */
 func getItem(w http.ResponseWriter, r *http.Request) {
 
-	user := getParam(r, USER_ID)
-	productId := getParam(r, ITEM_ID)
+	user := getParam(r, userID)
+	productID := getParam(r, itemID)
 	code := getUserCode(r)
-	resource := "/items/" + productId
-	redirectURL := HOST + "/" + user + "/items/" + productId
+	resource := "/items/" + productID
+	redirectURL := host + "/" + user + "/items/" + productID
 
 	//Getting a client to make the https://api.mercadolibre.com/items/MLU439286635
-	client, err := sdk.Meli(CLIENT_ID, code, CLIENT_SECRET, redirectURL)
+	client, err := sdk.Meli(clientID, code, clientSecret, redirectURL)
 
 	var response *http.Response
 	if response, err = client.Get(resource); err != nil {
@@ -138,19 +143,16 @@ func getItem(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%s", body)
 }
 
-/*
-This example shows you how to POST (publish) a new Item.
-*/
-
+/*postItem example shows how to POST (publish) a new Items throught MELI Api*/
 func postItem(w http.ResponseWriter, r *http.Request) {
 
-	user := getParam(r, USER_ID)
-	productId := getParam(r, ITEM_ID)
+	user := getParam(r, userID)
+	productID := getParam(r, itemID)
 
 	code := getUserCode(r)
-	redirectURL := HOST + "/" + user + "/items/" + productId
+	redirectURL := host + "/" + user + "/items/" + productID
 
-	client, err := sdk.Meli(CLIENT_ID, code, CLIENT_SECRET, redirectURL)
+	client, err := sdk.Meli(clientID, code, clientSecret, redirectURL)
 
 	item := "{\"title\":\"Item de test - No Ofertar\",\"category_id\":\"MLA1912\",\"price\":10,\"currency_id\":\"ARS\",\"available_quantity\":1,\"buying_mode\":\"buy_it_now\",\"listing_type_id\":\"bronze\",\"condition\":\"new\",\"description\": \"Item:,  Ray-Ban WAYFARER Gloss Black RB2140 901  Model: RB2140. Size: 50mm. Name: WAYFARER. Color: Gloss Black. Includes Ray-Ban Carrying Case and Cleaning Cloth. New in Box\",\"video_id\": \"YOUTUBE_ID_HERE\",\"warranty\": \"12 months by Ray Ban\",\"pictures\":[{\"source\":\"http://upload.wikimedia.org/wikipedia/commons/f/fd/Ray_Ban_Original_Wayfarer.jpg\"},{\"source\":\"http://en.wikipedia.org/wiki/File:Teashades.gif\"}]}"
 
@@ -163,14 +165,15 @@ func postItem(w http.ResponseWriter, r *http.Request) {
 	printOutput(w, response)
 }
 
+/*getSites example shows how to GET a public MELI API*/
 func getSites(w http.ResponseWriter, r *http.Request) {
 
-	user := getParam(r, USER_ID)
+	user := getParam(r, userID)
 	code := getUserCode(r)
 	resource := "/sites"
 
-	redirectURL := HOST + "/" + user + resource
-	client, err := sdk.Meli(CLIENT_ID, code, CLIENT_SECRET, redirectURL)
+	redirectURL := host + "/" + user + resource
+	client, err := sdk.Meli(clientID, code, clientSecret, redirectURL)
 
 	var response *http.Response
 	if response, err = client.Get(resource); err != nil {
@@ -183,12 +186,12 @@ func getSites(w http.ResponseWriter, r *http.Request) {
 
 func me(w http.ResponseWriter, r *http.Request) {
 
-	user := getParam(r, USER_ID)
+	user := getParam(r, userID)
 	code := getUserCode(r)
 	resource := "/users/me"
 
-	redirectURL := HOST + "/" + user + resource
-	client, err := sdk.Meli(CLIENT_ID, code, CLIENT_SECRET, redirectURL)
+	redirectURL := host + "/" + user + resource
+	client, err := sdk.Meli(clientID, code, clientSecret, redirectURL)
 
 	if err != nil {
 		log.Printf("Error: ", err.Error())
@@ -209,7 +212,7 @@ func me(w http.ResponseWriter, r *http.Request) {
 
 	if response.StatusCode == http.StatusForbidden {
 
-		url := sdk.GetAuthURL(CLIENT_ID, sdk.AUTH_URL_MLA, HOST+"/"+user+"/users/me")
+		url := sdk.GetAuthURL(clientID, sdk.AUTH_URL_MLA, host+"/"+user+"/users/me")
 		log.Printf("Returning Authentication URL:%s\n", url)
 		http.Redirect(w, r, url, 301)
 
@@ -223,16 +226,15 @@ This method responses when clicking in addresses link. After that, this will cal
 https://api.mercadolibre.com/users/214509008/addresses?access_token=$ACCESS_TOKEN
 to get the addresses of the user.
 */
-
 func addresses(w http.ResponseWriter, r *http.Request) {
 
-	user := getParam(r, USER_ID)
+	user := getParam(r, userID)
 	code := getUserCode(r)
 
 	resource := "/users/" + user + "/addresses"
-	redirectURL := HOST + "/" + user + "/users/addresses"
+	redirectURL := host + "/" + user + "/users/addresses"
 
-	client, err := sdk.Meli(CLIENT_ID, code, CLIENT_SECRET, redirectURL)
+	client, err := sdk.Meli(clientID, code, clientSecret, redirectURL)
 
 	if err != nil {
 		log.Printf("Error: ", err.Error())
@@ -251,7 +253,7 @@ func addresses(w http.ResponseWriter, r *http.Request) {
 	  entering your credentials you will obtain a CODE which will be used to get all the authorization tokens.
 	*/
 	if response.StatusCode == http.StatusForbidden {
-		url := sdk.GetAuthURL(CLIENT_ID, sdk.AUTH_URL_MLA, redirectURL)
+		url := sdk.GetAuthURL(clientID, sdk.AUTH_URL_MLA, redirectURL)
 		body, _ := ioutil.ReadAll(response.Body)
 		log.Printf("Returning Authentication URL:%s\n", url)
 		log.Printf("Error:%s", body)
@@ -266,7 +268,7 @@ This method returns the code for a specific user if it was previously sent.
 */
 func getUserCode(r *http.Request) string {
 
-	user := getParam(r, USER_ID)
+	user := getParam(r, userID)
 	code := r.FormValue("code")
 
 	userCodeMutex.Lock()
@@ -300,14 +302,14 @@ func printOutput(w http.ResponseWriter, response *http.Response) {
 
 func returnLinks(w http.ResponseWriter, r *http.Request) {
 
-	userId := "/214509008" //WARNING: REPLACE BY YOUR USER ID
-	href := "href=" + HOST + userId
+	userID := "/214509008" //WARNING: REPLACE BY YOUR USER ID
+	href := "href=" + host + userID
 
 	var links bytes.Buffer
-	links.WriteString("<a " + href + "/items/MLU439286635>" + HOST + "/items/MLU439286635</a><br>")
-	links.WriteString("<a " + href + "/sites>" + HOST + "/sites</a><br>")
-	links.WriteString("<a " + href + "/users/me>" + HOST + "/users/me</a><br>")
-	links.WriteString("<a " + href + "/users/addresses>" + HOST + "/users/addresses</a><br>")
+	links.WriteString("<a " + href + "/items/MLU439286635>" + host + "/items/MLU439286635</a><br>")
+	links.WriteString("<a " + href + "/sites>" + host + "/sites</a><br>")
+	links.WriteString("<a " + href + "/users/me>" + host + "/users/me</a><br>")
+	links.WriteString("<a " + href + "/users/addresses>" + host + "/users/addresses</a><br>")
 
 	fmt.Fprintf(w, "%s", links.String())
 }
