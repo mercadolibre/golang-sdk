@@ -328,12 +328,15 @@ func returnLinks(w http.ResponseWriter, r *http.Request) {
 								<head>
 								<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 								<script>
+								
 								$(document).ready(function(){
 								    $("#itemInformation").click(function(){
 								        $.get( $("#clientid").val() + "/items/" + $("#itemid").val(),
 								        function(data,status){
-											$("#response").val(data)
-								            //alert("Data: " + data + "\nStatus: " + status);
+											var obj = JSON.parse(data);
+											var pretty = JSON.stringify(obj, undefined, 4);
+											$("#response").val(pretty)
+								            //alert("Data: " + syntaxHighlight(data) + "\nStatus: " + status);
 								        });
 								    });
 								});
@@ -356,7 +359,7 @@ func returnLinks(w http.ResponseWriter, r *http.Request) {
 								
 								<div style="float:left; width:50%;">
 	
-									<textarea id="response" rows="50" cols="70">
+									<textarea id="response" rows="50" cols="100">
 										At w3schools.com you will learn how to make a website. We offer free tutorials in all web development technologies. 
 									</textarea>
 								</div>
