@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+$(document).ready(function(){
+    $("button").click(function(){
+        $.get( $("#clientid").text() + "/items/" + $("#itemid").text(),
+        function(data,status){
+            alert("Data: " + data + "\nStatus: " + status);
+        });
+    });
+});
+</script>
+</head>
+<body>
+
+<br>
+ClientID: <input type="text" name="clientid">
+<br><br>
+ItemID: <input type="text" name="itemid">
+<br><br><br><br>
+
+<button>Send an HTTP POST request to a page and get the result back</button>
+
+</html>

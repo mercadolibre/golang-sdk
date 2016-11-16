@@ -17,13 +17,13 @@ limitations under the License.
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
 	"sync"
+	"text/template"
 
 	"github.com/gorilla/mux"
 	"github.com/mercadolibre/golang-sdk/sdk"
@@ -38,7 +38,7 @@ const (
 var userCode map[string]string
 var userCodeMutex sync.Mutex
 
-/*Main application method.*/
+/*This Application is just an example about how to use the golang meli sdk to interact with MELI API*/
 func main() {
 	userCode = make(map[string]string)
 	log.Fatal(http.ListenAndServe(":8080", getRouter()))
@@ -49,10 +49,10 @@ type item struct {
 }
 
 type route struct {
-	Name        string
-	Method      string
-	Pattern     string
-	HandlerFunc http.HandlerFunc
+	name        string
+	method      string
+	pattern     string
+	handlerFunc http.HandlerFunc
 }
 
 type routes []route
@@ -105,12 +105,12 @@ func getRouter() *mux.Router {
 	for _, route := range routes {
 		var handler http.Handler
 
-		handler = route.HandlerFunc
+		handler = route.handlerFunc
 
 		router.
-			Methods(route.Method).
-			Path(route.Pattern).
-			Name(route.Name).
+			Methods(route.method).
+			Path(route.pattern).
+			Name(route.name).
 			Handler(handler)
 
 	}
@@ -300,16 +300,68 @@ func printOutput(w http.ResponseWriter, response *http.Response) {
 	fmt.Fprintf(w, "%s", body)
 }
 
+type LinksInformation struct {
+	ItemID string
+	Host   string
+	UserID string
+}
+
 func returnLinks(w http.ResponseWriter, r *http.Request) {
 
-	userID := "/214509008" //WARNING: REPLACE BY YOUR USER ID
-	href := "href=" + host + userID
+	//WARNING: REPLACE UserID BY YOURS
+	linkInfo := LinksInformation{ItemID: "MLU439286635", Host: host, UserID: "214509008"}
 
-	var links bytes.Buffer
-	links.WriteString("<a " + href + "/items/MLU439286635>" + host + "/items/MLU439286635</a><br>")
-	links.WriteString("<a " + href + "/sites>" + host + "/sites</a><br>")
-	links.WriteString("<a " + href + "/users/me>" + host + "/users/me</a><br>")
-	links.WriteString("<a " + href + "/users/addresses>" + host + "/users/addresses</a><br>")
+	linksTemplate := template.New("golang sdk example")
 
-	fmt.Fprintf(w, "%s", links.String())
+	//	t, _ := linksTemplate.Parse(`
+	//		<a href={{.Host}}/{{.UserID}}/items/{{.ItemID}}>{{.Host}}/items/{{.ItemID}}</a><br>
+	//		<a href={{.Host}}/{{.UserID}}/users/me>{{.Host}}/users/me</a><br>
+	//		<a href={{.Host}}/{{.UserID}}/sites>{{.Host}}/sites</a><br>
+	//		<a href={{.Host}}/{{.UserID}}/users/addresses>{{.Host}}/users/addresses</a><br>
+	//		`)
+
+	//	t.Execute(w, linkInfo)
+
+	t, _ := linksTemplate.Parse(`
+								<!DOCTYPE html>
+								<html>
+								<head>
+								<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+								<script>
+								$(document).ready(function(){
+								    $("#itemInformation").click(function(){
+								        $.get( $("#clientid").val() + "/items/" + $("#itemid").val(),
+								        function(data,status){
+											$("#response").val(data)
+								            //alert("Data: " + data + "\nStatus: " + status);
+								        });
+								    });
+								});
+								</script>
+								</head>
+								<body>
+								<div style="float:left; width:50%;">
+									<br>
+									ClientID: <input type="text" id="clientid">
+									<br><br>
+									ItemID: <input type="text" id="itemid">
+									<br><br><br><br>
+									
+									<button id="itemInformation">Get Item Information</button><br><br>
+									<button id="sitesInformation">Get sites Information</button><br><br>
+									<button id="myInfo">Get information about myself</button><br><br>
+									<button id="myAddress">Get information about myaddress</button><br><br>
+								</div>
+
+								
+								<div style="float:left; width:50%;">
+	
+									<textarea id="response" rows="50" cols="70">
+										At w3schools.com you will learn how to make a website. We offer free tutorials in all web development technologies. 
+									</textarea>
+								</div>
+								</html>`)
+
+	t.Execute(w, linkInfo)
+
 }
