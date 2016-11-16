@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package sdk
+package main
 
 import (
 	"bytes"
@@ -26,7 +26,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
-	"github.com/mercadolibre/golang-sdk"
+	"github.com/mercadolibre/golang-sdk/sdk"
 )
 
 const (
@@ -212,7 +212,7 @@ func me(w http.ResponseWriter, r *http.Request) {
 
 	if response.StatusCode == http.StatusForbidden {
 
-		url := sdk.GetAuthURL(clientID, sdk.AUTH_URL_MLA, host+"/"+user+"/users/me")
+		url := sdk.GetAuthURL(clientID, sdk.AuthURLMLA, host+"/"+user+"/users/me")
 		log.Printf("Returning Authentication URL:%s\n", url)
 		http.Redirect(w, r, url, 301)
 
@@ -253,7 +253,7 @@ func addresses(w http.ResponseWriter, r *http.Request) {
 	  entering your credentials you will obtain a CODE which will be used to get all the authorization tokens.
 	*/
 	if response.StatusCode == http.StatusForbidden {
-		url := sdk.GetAuthURL(clientID, sdk.AUTH_URL_MLA, redirectURL)
+		url := sdk.GetAuthURL(clientID, sdk.AuthURLMLA, redirectURL)
 		body, _ := ioutil.ReadAll(response.Body)
 		log.Printf("Returning Authentication URL:%s\n", url)
 		log.Printf("Error:%s", body)

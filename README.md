@@ -4,12 +4,7 @@ This is the official Golang SDK for MercadoLibre's Platform.
 
 ## How do I install it?
 
-<<<<<<< HEAD
-You can download the latest build at:
-    https://github.com/mercadolibre/golang-sdk/archive/master.zip
-=======
-You can download the latest build from [here](https://github.com/mercadolibre/go-sdk/archive/master.zip).
->>>>>>> a1b49a2d504bbb99e3d086dbfd3353996d4422dc
+You can download the latest build from [here](https://github.com/mercadolibre/golang-sdk/archive/master.zip).
 
 ## How do I install it using go:
 
