@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+
 	"github.com/gorilla/mux"
 	"github.com/mercadolibre/golang-sdk"
 )
@@ -37,6 +38,7 @@ const (
 var userCode map[string]string
 var userCodeMutex sync.Mutex
 
+/*Main application method.*/
 func main() {
 	userCode = make(map[string]string)
 	log.Fatal(http.ListenAndServe(":8080", getRouter()))
@@ -55,6 +57,7 @@ type Route struct {
 
 type Routes []Route
 
+/*getRouter returns a configured Router with all the paths and http supported methods*/
 func getRouter() *mux.Router {
 
 	routes := Routes{
@@ -96,6 +99,7 @@ func getRouter() *mux.Router {
 			returnLinks,
 		},
 	}
+
 	router := mux.NewRouter()
 
 	for _, route := range routes {
@@ -117,6 +121,7 @@ func getRouter() *mux.Router {
 const USER_ID = "userId"
 const ITEM_ID = "itemId"
 
+/*getItem example: performs a GET Method against items MELI API */
 func getItem(w http.ResponseWriter, r *http.Request) {
 
 	user := getParam(r, USER_ID)
@@ -138,10 +143,7 @@ func getItem(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%s", body)
 }
 
-/*
-This example shows you how to POST (publish) a new Item.
-*/
-
+/*postItem example shows how to POST (publish) a new Items throught MELI Api*/
 func postItem(w http.ResponseWriter, r *http.Request) {
 
 	user := getParam(r, USER_ID)
@@ -163,6 +165,7 @@ func postItem(w http.ResponseWriter, r *http.Request) {
 	printOutput(w, response)
 }
 
+/*getSites example shows how to GET a public MELI API*/
 func getSites(w http.ResponseWriter, r *http.Request) {
 
 	user := getParam(r, USER_ID)
@@ -223,7 +226,6 @@ This method responses when clicking in addresses link. After that, this will cal
 https://api.mercadolibre.com/users/214509008/addresses?access_token=$ACCESS_TOKEN
 to get the addresses of the user.
 */
-
 func addresses(w http.ResponseWriter, r *http.Request) {
 
 	user := getParam(r, USER_ID)
