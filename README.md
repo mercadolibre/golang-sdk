@@ -11,7 +11,7 @@ You can download the latest build from [here](https://github.com/mercadolibre/go
 Just run the following command within your $GOPATH
 
 ```bash
-go get github.com/mercadolibre/sdk
+go get github.com/mercadolibre/golang-sdk/sdk
 ```
 
 And that's it!
@@ -34,7 +34,7 @@ client, err := sdk.Meli(CLIENT_ID, USER_CODE, CLIENT_SECRET, REDIRECT_URL)
 To obtain the **USER_CODE** named above you will have to redirect the user to a specific url. To build this url, you can use the following code:
 
 ```go
-url := sdk.GetAuthURL(CLIENT_ID, sdk.MLA, "https://www.example.com")
+url := sdk.GetAuthURL(CLIENT_ID, sdk.AuthURLMLA, "https://www.example.com")
 ```
 
 As a result, you will need to somehow make the user to enter his/her credentials in that URL. Once mercadolibre api authenticates the user, a redirection url will be returned and the **USER_CODE** will come attached to it. (i.e https://www.example.com?code=TG-57f2b6c7e4b08aea0070353e-214509008)
@@ -83,7 +83,7 @@ if response, err = client.Get("/users/me"); err != nil {
 // Once the user enters his/her credentials, you need to use the USER_CODE to instantiate a new client, but this time it will be able to query private APIs.
 
 if response.StatusCode == http.StatusForbidden {
-    url := sdk.GetAuthURL(CLIENT_ID, sdk.MLA, "www.example.com")
+    url := sdk.GetAuthURL(CLIENT_ID, sdk.AuthURLMLA, "www.example.com")
     log.Printf("Returning Authentication URL:%s\n", url)
     http.Redirect(w, r, url, 301)
 }
