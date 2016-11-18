@@ -221,7 +221,7 @@ func me(w http.ResponseWriter, r *http.Request) {
 		url := sdk.GetAuthURL(clientID, sdk.AuthURLMLA, host+"/"+user+"/users/me")
 		log.Printf("Returning Authentication URL:%s\n", url)
 
-		userForbidden[user] = ""
+		//		userForbidden[user] = ""
 
 		http.Redirect(w, r, url, 302)
 	}
