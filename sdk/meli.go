@@ -47,7 +47,7 @@ import (
 
 const (
 	AuthURLMLA = "https://auth.mercadolibre.com.ar" // Argentina
-	AuthURLMlb = "https://auth.mercadolivre.com.br" // Brasil
+	AuthURLMLB = "https://auth.mercadolivre.com.br" // Brasil
 	AuthURLMco = "https://auth.mercadolibre.com.co" // Colombia
 	AuthURLMcr = "https://auth.mercadolibre.com.cr" // Costa Rica
 	AuthURLMec = "https://auth.mercadolibre.com.ec" // Ecuador
