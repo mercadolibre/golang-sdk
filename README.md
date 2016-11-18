@@ -21,25 +21,25 @@ And that's it!
 You can start integrating with https://api.mercadolibre.com by doing the following:
 
 ```go
-client, err := sdk.Meli(ClientID, USER_CODE, ClientSecret, REDIRECT_URL)
+client, err := sdk.Meli(ClientID, UserCode, ClientSecret, RedirectURL)
 ```
 **ClientID:** Is the id that was given to you when you registered your application by using *Application Manager*. For additional help you can access our [Developer's Site](http://developers.mercadolibre.com/register-your-application/).
 
 **ClientSecret:** Is a secret which is created during the complition of the step above.
 
-**USER_CODE:** Is a code which is asigned to a specific user when this one tryies to access a private mercadolibre API. It means that to get this code you will need to authenticate and authorize the user.
+**UserCode:** Is a code which is asigned to a specific user when this one tryies to access a private mercadolibre API. It means that to get this code you will need to authenticate and authorize the user.
 
-**REDIRECT_URL:** This is the url where the user will be redirected once it is authorized by mercadolibre.
+**RedirectURL:** This is the url where the user will be redirected once it is authorized by mercadolibre.
 
-To obtain the **USER_CODE** named above you will have to redirect the user to a specific url. To build this url, you can use the following code:
+To obtain the **UserCode** named above you will have to redirect the user to a specific url. To build this url, you can use the following code:
 
 ```go
 url := sdk.GetAuthURL(ClientID, sdk.AuthURLMLA, "https://www.example.com")
 ```
 
-As a result, you will need to somehow make the user to enter his/her credentials in that URL. Once mercadolibre api authenticates the user, a redirection url will be returned and the **USER_CODE** will come attached to it. (i.e https://www.example.com?code=TG-57f2b6c7e4b08aea0070353e-214509008)
+As a result, you will need to somehow make the user to enter his/her credentials in that URL. Once mercadolibre api authenticates the user, a redirection url will be returned and the **UserCode** will come attached to it. (i.e https://www.example.com?code=TG-57f2b6c7e4b08aea0070353e-214509008)
 
-**Warning**: This **USER_CODE** needs to be parsed and kept by your application in order to be used for later instantiate the Meli client.
+**Warning**: This **UserCode** needs to be parsed and kept by your application in order to be used for later instantiate the Meli client.
 
 Now you can instantiate another ```Meli``` object, but this time ** this object will allow you to access the private API and also will manage the token refreshing, so you do not need to worrie about this handshake**
 
@@ -51,8 +51,8 @@ This SDK is just a thin layer on top of an http client to handle all the OAuth W
 ## Making GET calls to public API
 
 ```go
-// USER_CODE can be empty since neither authorization nor authentication is needed.
-client, err := sdk.Meli(ClientID, USER_CODE, ClientSecret, "www.example.com")
+// UserCode can be empty since neither authorization nor authentication is needed.
+client, err := sdk.Meli(ClientID, UserCode, ClientSecret, "www.example.com")
 resp, err := client.Get("/users/me")
 
 if err != nil {
@@ -80,7 +80,7 @@ if response, err = client.Get("/users/me"); err != nil {
 }
 
 // If the API requires authorization you need to redirect the user.
-// Once the user enters his/her credentials, you need to use the USER_CODE to instantiate a new client, but this time it will be able to query private APIs.
+// Once the user enters his/her credentials, you need to use the UserCode to instantiate a new client, but this time it will be able to query private APIs.
 
 if response.StatusCode == http.StatusForbidden {
     url := sdk.GetAuthURL(ClientID, sdk.AuthURLMLA, "www.example.com")
@@ -88,7 +88,7 @@ if response.StatusCode == http.StatusForbidden {
     http.Redirect(w, r, url, 301)
 }
 
-// Once the user was redirected and a USER_CODE was received:
+// Once the user was redirected and a UserCode was received:
 if  client, err := sdk.Meli(ClientID, CODE_JUST_OBTEINED, ClientSecret, redirectURL); err != nil {
     log.Printf("Error: ", err.Error())
     return
