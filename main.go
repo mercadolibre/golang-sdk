@@ -36,11 +36,15 @@ const (
 )
 
 var userCode map[string]string
+
+//var userForbidden map[string]string
 var userCodeMutex sync.Mutex
 
 /*This Application is just an example about how to use the golang meli sdk to interact with MELI API*/
 func main() {
 	userCode = make(map[string]string)
+	//	userForbidden = make(map[string]string)
+
 	log.Fatal(http.ListenAndServe(":8080", getRouter()))
 }
 
@@ -190,6 +194,8 @@ func me(w http.ResponseWriter, r *http.Request) {
 	code := getUserCode(r)
 	resource := "/users/me"
 
+	log.Printf("user:%s code:%s", user, code)
+
 	redirectURL := host + "/" + user + resource
 	client, err := sdk.Meli(clientID, code, clientSecret, redirectURL)
 
@@ -199,7 +205,7 @@ func me(w http.ResponseWriter, r *http.Request) {
 	}
 
 	/*Example
-	  If the API to be called needs authorization and authentication (private api), the the authentication URL needs to be generated.
+	  If the API to be called needs authorization and authentication (private api), then the authentication URL needs to be generated.
 	  Once you generate the URL and call it, you will be redirected to a ML login page where your credentials will be asked. Then, after
 	  entering your credentials you will obtained a CODE which will be used to get all the authorization tokens.
 	*/
@@ -214,8 +220,10 @@ func me(w http.ResponseWriter, r *http.Request) {
 
 		url := sdk.GetAuthURL(clientID, sdk.AuthURLMLA, host+"/"+user+"/users/me")
 		log.Printf("Returning Authentication URL:%s\n", url)
-		http.Redirect(w, r, url, 301)
 
+		userForbidden[user] = ""
+
+		http.Redirect(w, r, url, 302)
 	}
 
 	printOutput(w, response)
@@ -230,6 +238,8 @@ func addresses(w http.ResponseWriter, r *http.Request) {
 
 	user := getParam(r, userID)
 	code := getUserCode(r)
+
+	log.Printf("user:%s code:%s", user, code)
 
 	resource := "/users/" + user + "/addresses"
 	redirectURL := host + "/" + user + "/users/addresses"
@@ -257,7 +267,8 @@ func addresses(w http.ResponseWriter, r *http.Request) {
 		body, _ := ioutil.ReadAll(response.Body)
 		log.Printf("Returning Authentication URL:%s\n", url)
 		log.Printf("Error:%s", body)
-		http.Redirect(w, r, url, 301)
+
+		http.Redirect(w, r, url, 302)
 	}
 
 	printOutput(w, response)
@@ -308,19 +319,9 @@ type LinksInformation struct {
 
 func returnLinks(w http.ResponseWriter, r *http.Request) {
 
-	//WARNING: REPLACE UserID BY YOURS
-	linkInfo := LinksInformation{ItemID: "MLU439286635", Host: host, UserID: "214509008"}
+	linkInfo := LinksInformation{}
 
 	linksTemplate := template.New("golang sdk example")
-
-	//	t, _ := linksTemplate.Parse(`
-	//		<a href={{.Host}}/{{.UserID}}/items/{{.ItemID}}>{{.Host}}/items/{{.ItemID}}</a><br>
-	//		<a href={{.Host}}/{{.UserID}}/users/me>{{.Host}}/users/me</a><br>
-	//		<a href={{.Host}}/{{.UserID}}/sites>{{.Host}}/sites</a><br>
-	//		<a href={{.Host}}/{{.UserID}}/users/addresses>{{.Host}}/users/addresses</a><br>
-	//		`)
-
-	//	t.Execute(w, linkInfo)
 
 	t, _ := linksTemplate.Parse(`
 								<!DOCTYPE html>
@@ -328,6 +329,17 @@ func returnLinks(w http.ResponseWriter, r *http.Request) {
 								<head>
 								<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 								<script>
+								var redirected = false;
+								$(document).ready(function(){
+								    $("#sitesInformation").click(function(){
+								        $.get( $("#clientid").val() + "/sites",
+								        function(data,status){
+											var obj = JSON.parse(data);
+											var pretty = JSON.stringify(obj, undefined, 4);
+											$("#response").val(pretty);
+								        });
+								    });
+								});
 								
 								$(document).ready(function(){
 								    $("#itemInformation").click(function(){
@@ -335,32 +347,88 @@ func returnLinks(w http.ResponseWriter, r *http.Request) {
 								        function(data,status){
 											var obj = JSON.parse(data);
 											var pretty = JSON.stringify(obj, undefined, 4);
-											$("#response").val(pretty)
-								            //alert("Data: " + syntaxHighlight(data) + "\nStatus: " + status);
+											$("#response").val(pretty);
+								        });
+								    });
+								});
+								
+								$(document).ready(function(){
+								    $("#getMyId").click(function(){
+										$.get("https://api.mercadolibre.com/sites/"+$("#siteId").val() +"/search?nickname=" + $("#nickname").val(),
+								        function(data, status){
+											var pretty = JSON.stringify(data, undefined, 4);
+											var json = JSON.parse(pretty);
+											$("#clientid").val(json.seller.id);
+											$("#response").val(pretty);          
+								        });
+								    });
+								});
+								
+								$(document).ready(function(){
+								    $("#myInfo").click(function(){
+										$.get($("#clientid").val() + "/users/me",
+								        function(data, status){
+											if (!data.redirect) {
+												var resp
+												try{
+													resp = JSON.parse(data);
+												}catch(err){
+													var newWindow = window.open("", "new window", "width=500", "height=100");
+		 										    newWindow.document.write(data);
+													return
+												}
+												var pretty = JSON.stringify(resp, undefined, 4);
+												$("#response").val(pretty);           
+        									}
+											         
+								        });
+								    });
+								});
+								$(document).ready(function(){
+								    $("#myAddress").click(function(){
+										$.get($("#clientid").val() + "/users/addresses",
+								        function(data, status){
+											if (!data.redirect) {
+												var resp
+												try{
+													resp = JSON.parse(data);
+												}catch(err){
+													var newWindow = window.open("", "new window", "width=500", "height=100");
+		 										    newWindow.document.write(data);
+													return
+												}
+												var pretty = JSON.stringify(resp, undefined, 4);
+												$("#response").val(pretty);           
+        									}
+											         
 								        });
 								    });
 								});
 								</script>
 								</head>
+								
+								
 								<body>
 								<div style="float:left; width:50%;">
-									<br>
-									ClientID: <input type="text" id="clientid">
-									<br><br>
-									ItemID: <input type="text" id="itemid">
-									<br><br><br><br>
+									<pre>Nickname: <input type="text" id="nickname"><select id="siteId"><option value="MLA">MLA</option><option value="MLM">MLM</option><option value="MLU">MLU</option></select><button id="getMyId">Get My ID</button><br></pre>
+									<pre>ClientID: <input type="text" id="clientid"></pre>
 									
-									<button id="itemInformation">Get Item Information</button><br><br>
-									<button id="sitesInformation">Get sites Information</button><br><br>
-									<button id="myInfo">Get information about myself</button><br><br>
-									<button id="myAddress">Get information about myaddress</button><br><br>
+									<pre>MELI API Public access</pre>
+									<pre><button id="sitesInformation">Get sites Information</button><br></pre>
+									<pre><button id="itemInformation">Get Item Information</button> ItemID: <input type="text" id="itemid"></pre>
+									
+									<pre>MELI API Private access</pre>
+									<pre><button id="myInfo">Get information about myself</button></pre>
+									<pre><button id="myAddress">Get information about my address</button><br></pre>
+									
+									
 								</div>
 
 								
 								<div style="float:left; width:50%;">
 	
 									<textarea id="response" rows="50" cols="100">
-										At w3schools.com you will learn how to make a website. We offer free tutorials in all web development technologies. 
+										
 									</textarea>
 								</div>
 								</html>`)
