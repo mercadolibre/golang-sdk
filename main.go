@@ -30,9 +30,9 @@ import (
 )
 
 const (
-	clientID     = 2016679662291617
-	clientSecret = "bA89yqE9lPeXwcZkOLBTdKGDXYFbApuZ"
-	host         = "http://localhost:8080"
+	appID     = 3807046558177387
+	secretKey = "B6kQCzJQZhWg7GsXChnWJNpyWyYUTpFa"
+	host      = "https://www.golangapp.com.ar:8080"
 )
 
 var userCode map[string]string
@@ -43,9 +43,8 @@ var userCodeMutex sync.Mutex
 /*This Application is just an example about how to use the golang meli sdk to interact with MELI API*/
 func main() {
 	userCode = make(map[string]string)
-	//	userForbidden = make(map[string]string)
-
-	log.Fatal(http.ListenAndServe(":8080", getRouter()))
+	log.Printf("\nappId: %d\nsecretKey: %s\n", appID, secretKey)
+	log.Fatal(http.ListenAndServeTLS(":8080", "cert.pem", "key.pem", getRouter()))
 }
 
 type item struct {
@@ -135,7 +134,7 @@ func getItem(w http.ResponseWriter, r *http.Request) {
 	redirectURL := host + "/" + user + "/items/" + productID
 
 	//Getting a client to make the https://api.mercadolibre.com/items/MLU439286635
-	client, err := sdk.Meli(clientID, code, clientSecret, redirectURL)
+	client, err := sdk.Meli(appID, code, secretKey, redirectURL)
 
 	var response *http.Response
 	if response, err = client.Get(resource); err != nil {
@@ -156,7 +155,7 @@ func postItem(w http.ResponseWriter, r *http.Request) {
 	code := getUserCode(r)
 	redirectURL := host + "/" + user + "/items/" + productID
 
-	client, err := sdk.Meli(clientID, code, clientSecret, redirectURL)
+	client, err := sdk.Meli(appID, code, secretKey, redirectURL)
 
 	item := "{\"title\":\"Item de test - No Ofertar\",\"category_id\":\"MLA1912\",\"price\":10,\"currency_id\":\"ARS\",\"available_quantity\":1,\"buying_mode\":\"buy_it_now\",\"listing_type_id\":\"bronze\",\"condition\":\"new\",\"description\": \"Item:,  Ray-Ban WAYFARER Gloss Black RB2140 901  Model: RB2140. Size: 50mm. Name: WAYFARER. Color: Gloss Black. Includes Ray-Ban Carrying Case and Cleaning Cloth. New in Box\",\"video_id\": \"YOUTUBE_ID_HERE\",\"warranty\": \"12 months by Ray Ban\",\"pictures\":[{\"source\":\"http://upload.wikimedia.org/wikipedia/commons/f/fd/Ray_Ban_Original_Wayfarer.jpg\"},{\"source\":\"http://en.wikipedia.org/wiki/File:Teashades.gif\"}]}"
 
@@ -177,7 +176,7 @@ func getSites(w http.ResponseWriter, r *http.Request) {
 	resource := "/sites"
 
 	redirectURL := host + "/" + user + resource
-	client, err := sdk.Meli(clientID, code, clientSecret, redirectURL)
+	client, err := sdk.Meli(appID, code, secretKey, redirectURL)
 
 	var response *http.Response
 	if response, err = client.Get(resource); err != nil {
@@ -197,7 +196,7 @@ func me(w http.ResponseWriter, r *http.Request) {
 	log.Printf("user:%s code:%s", user, code)
 
 	redirectURL := host + "/" + user + resource
-	client, err := sdk.Meli(clientID, code, clientSecret, redirectURL)
+	client, err := sdk.Meli(appID, code, secretKey, redirectURL)
 
 	if err != nil {
 		log.Printf("Error: ", err.Error())
@@ -218,10 +217,8 @@ func me(w http.ResponseWriter, r *http.Request) {
 
 	if response.StatusCode == http.StatusForbidden {
 
-		url := sdk.GetAuthURL(clientID, sdk.AuthURLMLA, host+"/"+user+"/users/me")
+		url := sdk.GetAuthURL(appID, sdk.AuthURLMLA, host+"/"+user+"/users/me")
 		log.Printf("Returning Authentication URL:%s\n", url)
-
-		//		userForbidden[user] = ""
 
 		http.Redirect(w, r, url, 302)
 	}
@@ -244,7 +241,7 @@ func addresses(w http.ResponseWriter, r *http.Request) {
 	resource := "/users/" + user + "/addresses"
 	redirectURL := host + "/" + user + "/users/addresses"
 
-	client, err := sdk.Meli(clientID, code, clientSecret, redirectURL)
+	client, err := sdk.Meli(appID, code, secretKey, redirectURL)
 
 	if err != nil {
 		log.Printf("Error: ", err.Error())
@@ -263,7 +260,7 @@ func addresses(w http.ResponseWriter, r *http.Request) {
 	  entering your credentials you will obtain a CODE which will be used to get all the authorization tokens.
 	*/
 	if response.StatusCode == http.StatusForbidden {
-		url := sdk.GetAuthURL(clientID, sdk.AuthURLMLA, redirectURL)
+		url := sdk.GetAuthURL(appID, sdk.AuthURLMLA, redirectURL)
 		body, _ := ioutil.ReadAll(response.Body)
 		log.Printf("Returning Authentication URL:%s\n", url)
 		log.Printf("Error:%s", body)
