@@ -59,6 +59,7 @@ const (
 	AuthURLMpe = "https://auth.mercadolibre.com.pe" // Peru
 	AuthURLMpt = "https://auth.mercadolivre.pt"     // Portugal
 	AuthURLMrd = "https://auth.mercadolibre.com.do" // Dominicana
+	AuthURlCBT = "https://global-selling.mercadolibre.com" // CBT
 
 	AuthoricationCode = "authorization_code"
 	APIURL            = "https://api.mercadolibre.com"
