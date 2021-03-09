@@ -1,3 +1,20 @@
+![No longer maintained](https://img.shields.io/badge/Maintenance-OFF-red.svg)
+
+### [DEPRECATED] This repository is no longer maintained
+
+> From the first week of April 2021 we will stop maintaining our SDKs.
+>
+> This project is not functional, the dependencies will not be updated to latest ones.
+>
+> We recommend you read our [documentation](https://developers.mercadolibre.com).
+
+  <a href="https://developers.mercadolibre.com">
+    <img src="https://user-images.githubusercontent.com/1153516/73021269-043c2d80-3e06-11ea-8d0e-6e91441c2900.png" alt="Mercado Libre Developers" width="200"></a>
+  </a>
+
+---
+
+<br>
 # MercadoLibre's Golang SDK
 
 This is the official Golang SDK for MercadoLibre's Platform.
@@ -23,7 +40,8 @@ You can start integrating with https://api.mercadolibre.com by doing the followi
 ```go
 client, err := sdk.Meli(ClientID, UserCode, ClientSecret, RedirectURL)
 ```
-**ClientID:** Is the id that was given to you when you registered your application by using *Application Manager*. For additional help you can access our [Developer's Site](http://developers.mercadolibre.com/register-your-application/).
+
+**ClientID:** Is the id that was given to you when you registered your application by using _Application Manager_. For additional help you can access our [Developer's Site](http://developers.mercadolibre.com/register-your-application/).
 
 **ClientSecret:** Is a secret which is created during the complition of the step above.
 
@@ -41,12 +59,11 @@ As a result, you will need to somehow make the user to enter his/her credentials
 
 **Warning**: This **UserCode** needs to be parsed and kept by your application in order to be used for later instantiate the Meli client.
 
-Now you can instantiate another ```Meli``` object, but this time ** this object will allow you to access the private API and also will manage the token refreshing, so you do not need to worrie about this handshake**
+Now you can instantiate another `Meli` object, but this time ** this object will allow you to access the private API and also will manage the token refreshing, so you do not need to worrie about this handshake**
 
 There are some design considerations worth to mention.
 
 This SDK is just a thin layer on top of an http client to handle all the OAuth WebServer flow for you.
-
 
 ## Making GET calls to public API
 
@@ -63,8 +80,8 @@ fmt.Printf("response:%s\n", userInfo)
 
 ```
 
-
 ## Making GET calls to a private API
+
 ```go
 var client *sdk.Meli
 
@@ -111,6 +128,7 @@ userInfo, _= ioutil.ReadAll(resp.Body)
 fmt.Printf("response:%s\n", userInfo)
 
 ```
+
 ## Making PUT calls
 
 ```go
@@ -125,6 +143,7 @@ if err != nil {
 userInfo, _= ioutil.ReadAll(resp.Body)
 fmt.Printf("response:%s\n", userInfo)
 ```
+
 ## Making DELETE calls
 
 ```go
@@ -143,7 +162,7 @@ That's great! Pull requests are very welcome!
 Just fork the project in GitHub. Create a topic branch, write some code and add some tests for your new code.
 You can find some examples by taking a look at the main.go file.
 
-To run the tests run ```make test```.
+To run the tests run `make test`.
 
 **Be aware:** Please, make sure all tests are passing before committing any change. Any pull request with failing tests will be automatically discarded.
 
